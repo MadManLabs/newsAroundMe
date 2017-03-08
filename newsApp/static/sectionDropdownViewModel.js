@@ -1,25 +1,43 @@
 $(function() {
   function SectionDropdownViewModel() {
     var self = this;
-    self.label = ko.observable("Loading");
+    self.cityLabel = ko.observable("Loading");
     self.disabled = ko.observable(false);
-    self.selection = ko.observable();
 
-    self.locations = ko.observableArray(JSON.parse($("#locationMetadata")[0].innerHTML))
+    self.location = ko.observable();
+    self.locations = ko.observableArray(JSON.parse($("#locationMetadata")[0].innerHTML));
+
+    self.languages = ko.observableArray([]);
+    self.selectedLanguages = ko.observableArray([]);
+    self.langLabel = ko.computed(function() {
+      if (self.selectedLanguages().length === self.languages().length) {
+        return "All"
+      } else {
+        var str = "";
+
+        self.selectedLanguages().forEach(function(language) {
+          str = str + language.displayName;
+        })
+
+        return str;
+      }
+    });
 
     self.loadSection = function(section) {
-      var locationMatch, url;
+      var locationMatch, url, section;
 
       locationMatch = self._getMatchingLocation(section);
 
       if (!!locationMatch) {
-        if (!!self.selection() && (locationMatch.value === self.selection().value)) {
+        if (!!self.location() && (locationMatch.value === self.location().value)) {
           // the section is already loaded.
           return;
         }
 
-        self.selection(locationMatch);
-        self.label(locationMatch.displayName);
+        self.location(locationMatch);
+        self.cityLabel(locationMatch.displayName);
+        self.languages(locationMatch.languages);
+        self.selectedLanguages(locationMatch.languages);
 
         // update page title
         document.title = locationMatch.title;
@@ -43,6 +61,18 @@ $(function() {
 
     self.chooseSection = function(section) {
       window.navigateTo(section)
+    }
+
+    self.isLanguageSelected = function(language) {
+      return $.inArray(language, self.selectedLanguages()) > -1;
+    }
+
+    self.toggleLanguage = function(language) {
+      if (self.isLanguageSelected(language)) {
+        self.selectedLanguages.remove(language);
+      } else {
+        self.selectedLanguages.push(language);
+      }
     }
 
     self.loadStoriesForUserLocation = function() {
